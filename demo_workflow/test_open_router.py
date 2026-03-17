@@ -11,7 +11,7 @@ completion = client.chat.completions.create(
   messages=[
     {
       "role": "user",
-      "content": "What is the meaning of life?"
+      "content": "Please explain Automated Interpretability and Circuit Attributions from first principles"
     }
   ]
 )
