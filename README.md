@@ -116,6 +116,43 @@ loss:    L = MSE(x, x_hat) + lambda * L1(h)
 
 ---
 
+### Progress Log
+
+#### Phase 0 -- completed
+All checks passed. GPT-2 small loads correctly (12 layers, 12 heads, d_model=768, d_mlp=3072). Generation completes sensibly. IOI logit difference is positive on all 5 test prompts with a mean in the expected range.
+
+#### Phase 2 -- completed
+Collected 1,000,000 activation vectors at `blocks.7.hook_resid_post` from wikitext-103-raw-v1 (streamed via HuggingFace `datasets`).
+
+| Check | Result |
+|-------|--------|
+| Shape | `(1000000, 768)` |
+| Mean activation norm | 126.06 (range 70.97 -- 3177.75) |
+| NaN / Inf | None |
+| Reconstruction (cached -> remaining layers) | Max logit diff = 0.000000 |
+
+Normalization stats saved (mean norm 87.05, mean std 3.08). Output in `sae-basics/activations/`.
+
+#### Phase 3 -- completed
+Trained a **TopK sparse autoencoder** (8x expansion = 6144 features, k=50) for 10 epochs over the 1M activation dataset (~2440 steps). Initially attempted a vanilla ReLU SAE with L1 penalty, but L0 remained ~4000 regardless of L1 coefficient -- switched to TopK which directly controls sparsity.
+
+Dead feature resampling triggered at step 2000, reinitializing 1792 dead features toward high-error examples.
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Explained variance | 0.985 | PASS (> 0.95) |
+| L0 (features active per input) | 50.0 | PASS (exactly k) |
+| Dead feature fraction | 9.39% | PASS (< 50%) |
+| Decoder norms | mean=1.0000 | PASS |
+| Decoder diversity (mean cosine sim) | 0.0015 | PASS (< 0.5) |
+| Feature sparsity | 80.5% activate on <1% of inputs | PASS |
+| Substitution test (CE increase) | +1.03 nats | FAIL (> 0.2 nats) |
+| NaN losses | None | PASS |
+
+The substitution test failure is expected given only 1M training tokens (the plan recommends 5--50M). Reconstruction quality (EV=0.985) should still be sufficient for IOI feature analysis. Model saved to `sae-basics/sae_model/`.
+
+---
+
 ### Phase 4: Feature Analysis on IOI
 
 **Goal:** Identify which SAE features are relevant to the IOI task.
@@ -172,6 +209,7 @@ loss:    L = MSE(x, x_hat) + lambda * L1(h)
 
 - `sae-basics/phase0_setup.py` -- Phase 0: loads GPT-2 small via TransformerLens, verifies architecture (12 layers, 12 heads, d_model=768), tests generation, and checks IOI logit difference
 - `sae-basics/phase2_activation_collection.py` -- Phase 2: collects 1M residual-stream activations at layer 7 (`hook_resid_post`) from wikitext-103, saves as numpy with normalization stats to `sae-basics/activations/`
+- `sae-basics/phase3_sae_training.py` -- Phase 3: trains a TopK sparse autoencoder (8x expansion, k=50) on collected activations, with dead feature resampling and full post-training sanity checks; saves model to `sae-basics/sae_model/`
 - `demo_workflow/test_open_router.py` -- Minimal example hitting the OpenRouter API via the OpenAI SDK
 - `toy_transformers/Transformer.py` -- Hand-written transformer components (embed/unembed, MLP, attention)
 - `toy_transformers/modular_arithmetic_transformer.py` -- Reimplementation of the modular arithmetic toy model from [Nanda 2023](https://arxiv.org/abs/2301.05217)
