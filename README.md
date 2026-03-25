@@ -171,6 +171,7 @@ loss:    L = MSE(x, x_hat) + lambda * L1(h)
 ## File Index
 
 - `sae-basics/phase0_setup.py` -- Phase 0: loads GPT-2 small via TransformerLens, verifies architecture (12 layers, 12 heads, d_model=768), tests generation, and checks IOI logit difference
+- `sae-basics/phase2_activation_collection.py` -- Phase 2: collects 1M residual-stream activations at layer 7 (`hook_resid_post`) from wikitext-103, saves as numpy with normalization stats to `sae-basics/activations/`
 - `demo_workflow/test_open_router.py` -- Minimal example hitting the OpenRouter API via the OpenAI SDK
 - `toy_transformers/Transformer.py` -- Hand-written transformer components (embed/unembed, MLP, attention)
 - `toy_transformers/modular_arithmetic_transformer.py` -- Reimplementation of the modular arithmetic toy model from [Nanda 2023](https://arxiv.org/abs/2301.05217)
